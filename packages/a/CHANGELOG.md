@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com/allenyummy/monorepo_playground/compare/@allenyummy/a-1.5.1...@allenyummy/a-1.6.0) (2023-04-21)
+
+
+### Features
+
+* add feature in package a ([79c5f88](https://github.com/allenyummy/monorepo_playground/commit/79c5f88f143068221ba682c92f893bc250eb02a9))
+
 ### [1.5.1](https://github.com/allenyummy/monorepo_playground/compare/@allenyummy/a-1.5.0...@allenyummy/a-1.5.1) (2023-04-21)
 
 ## 1.5.0 (2023-04-21)
