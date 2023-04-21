@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "vite build && tsc --declaration --emitDeclarationOnly"
+    "build": "vite build && tsc --declaration --emitDeclarationOnly",
+    "bump-version": "standard-version --path=./ --skip.tag --tag-prefix='@allenyummy/a-' --releaseCommitMessageFormat='chore(@allenyummy/a): bump version to {{currentTag}}'"
   },
   "keywords": [],
   "author": "",
