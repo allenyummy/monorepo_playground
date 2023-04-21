@@ -115,14 +115,14 @@ jobs:
         with:
           version: 7.0.x
 
-      - name: build
-        if: steps.compare.outputs.should-release == 'true'
-        run: |
-          pnpm install
-          cd ${{ matrix.package_path }}
-          pnpm run build
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
+      # - name: build
+      #   if: steps.compare.outputs.should-release == 'true'
+      #   run: |
+      #     pnpm install
+      #     cd ${{ matrix.package_path }}
+      #     pnpm run build
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
 
       - name: publish package if patch version is changed and never published before
         if: steps.compare.outputs.should-release == 'true'
