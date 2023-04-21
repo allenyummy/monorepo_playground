@@ -1,0 +1,127 @@
+name: Publish pacakge
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish-pkg:
+    # we should put strategy inside this resulable workflow cuz using reusable workflow & strategy together is not supported yet = =
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+    strategy:
+      matrix: ${{ fromJson(inputs.package_infos) }}
+    name: 'package "${{ matrix.package_name }}" publish'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure committer
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"      
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@allenyummy'
+
+      - name: install python3
+        run: sudo apt-get install -y python3
+      
+      - name: get remote versions and set output for 'steps.remote.outputs.[package-basename/remote-versions/is-private]'
+        id: remote
+        run: |
+          packagePath=${{ matrix.package_path }}
+          packageBaseName=$(basename ${{ matrix.package_path }})
+          packageName=$(cat ${packagePath}/package.json | grep name | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]') 
+          isPrivate=$(cat ${packagePath}/package.json | grep private | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
+
+          remoteVers=$(npm show ${packageName} versions --json)||remoteVers=[]
+          remoteVersInOneLine=`python3 << END
+          processStr = '[' + ','.join([f"'{str(ver)}'" for ver in $remoteVers]) + ']'
+          print (processStr)
+          END`
+          echo "package-basename=$packageBaseName" >> $GITHUB_OUTPUT
+          echo "remote-versions=$remoteVersInOneLine" >> $GITHUB_OUTPUT
+          echo "is-private=$isPrivate" >> $GITHUB_OUTPUT
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if version has been updated and set output for 'steps.check.outputs.[changed/version/type/commit]'
+        id: check
+        uses: EndBug/version-check@v2
+        with:
+          file-name: ./packages/${{ steps.remote.outputs.package-basename }}/package.json
+          diff-search: true
+          
+      - name: set output for 'steps.compare.outputs.[should-release/debug-info]'
+        id: compare
+        run: |
+          isPrivate=${{ steps.remote.outputs.is-private }}
+          checkChanged=${{ steps.check.outputs.changed }}
+          checkType=${{ steps.check.outputs.type }}
+          checkNewVersion=${{ steps.check.outputs.version }}
+          checkCommit=${{ steps.check.outputs.commit }}
+          shouldRelease=true
+          debugInfo="${debugInfo:='shouldRelease is $shouldRelease because new patch version is detected and not existed in registry yet.'}"
+          
+          if [[ $isPrivate = "true" ]]; then
+             shouldRelease=false
+             debugInfo="shouldRelease is $shouldRelease because the package is private."
+          fi
+
+          if [[ $checkChanged = "false" ]]; then
+             shouldRelease=false
+             debugInfo="shouldRelease is $shouldRelease because no new version is detected."
+          fi
+          
+          if [[ $checkChanged = "true" ]] && [[ $checkType != "patch" ]]; then
+             shouldRelease=false
+             debugInfo="shouldRelease is $shouldRelease because new version is not updated in patch but in $checkType."
+          fi
+          
+          isAlreadyPublished=`python3 << END
+          print (str('$checkNewVersion' in ${{ steps.remote.outputs.remote-versions }}).lower())
+          END`
+          if [[ $isAlreadyPublished = "true" ]]; then
+             shouldRelease=false
+             debugInfo="shouldRelease is $shouldRelease because new version is already existed in registry."
+          fi
+          
+          echo "should-release=$shouldRelease" >> $GITHUB_OUTPUT
+          echo "debug-info=$debugInfo" >> $GITHUB_OUTPUT
+          
+      - name: echo all steps outputs for debug
+        run: |
+          echo "package-basename: ${{ steps.remote.outputs.package-basename }}"
+          echo "remote-versions: ${{ steps.remote.outputs.remote-versions }}"
+          echo "is-private: ${{ steps.remote.outputs.is-private }}"
+          echo "check-version-is-changed: ${{ steps.check.outputs.changed }}"
+          echo "check-version-changed-type: ${{ steps.check.outputs.type }}"
+          echo "check-new-version: ${{ steps.check.outputs.version }}"
+          echo "check-commit: ${{ steps.check.outputs.commit }}"
+          echo "should-release: ${{ steps.compare.outputs.should-release }}"
+          echo "debug-info: ${{ steps.compare.outputs.debug-info }}"
+
+      # - name: Setup pnpm
+      #   if: steps.compare.outputs.should-release == 'true'
+      #   uses: pnpm/action-setup@v2.2.1
+      #   with:
+      #     version: 7.0.x
+      # - name: build
+      #   if: steps.compare.outputs.should-release == 'true'
+      #   run: |
+      #     pnpm install
+      #     pnpm run base-build
+      #     cd ${{ matrix.package_path }}
+      #     pnpm run build
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
+      # - name: publish package if patch version is changed and never published before
+      #   if: steps.compare.outputs.should-release == 'true'
+      #   run: |
+      #     cd ${{ matrix.package_path }}
+      #     pnpm publish --tag prod-latest --publish-branch production
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
