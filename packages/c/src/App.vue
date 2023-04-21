@@ -11,6 +11,7 @@ import HelloWorld from './components/HelloWorld.vue'
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
     <span>test version 0.0.0 -> 0.0.1</span>
+    <span>feat feat</span>
   </div>
   <HelloWorld msg="Vite + Vue" />
 </template>

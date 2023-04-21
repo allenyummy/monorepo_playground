@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.4](https://github.com/allenyummy/monorepo_playground/compare/@allenyummy/c-0.0.3...@allenyummy/c-0.0.4) (2023-04-21)
+
+
+### Features
+
+* add feature in package c ([763075b](https://github.com/allenyummy/monorepo_playground/commit/763075b94872900b4f6ea7fab30c8037d570e4ce))
+
 ### 0.0.3 (2023-04-21)
 
 
