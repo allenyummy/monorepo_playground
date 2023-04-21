@@ -45,6 +45,7 @@ jobs:
           processStr = '[' + ','.join([f"'{str(ver)}'" for ver in $remoteVers]) + ']'
           print (processStr)
           END`
+          echo "package-name=$packageName" >> $GITHUB_OUTPUT
           echo "package-basename=$packageBaseName" >> $GITHUB_OUTPUT
           echo "remote-versions=$remoteVersInOneLine" >> $GITHUB_OUTPUT
           echo "is-private=$isPrivate" >> $GITHUB_OUTPUT
@@ -97,6 +98,7 @@ jobs:
           
       - name: echo all steps outputs for debug
         run: |
+          echo "package-name: ${{ steps.remote.outputs.package-name }}"
           echo "package-basename: ${{ steps.remote.outputs.package-basename }}"
           echo "remote-versions: ${{ steps.remote.outputs.remote-versions }}"
           echo "is-private: ${{ steps.remote.outputs.is-private }}"
@@ -107,24 +109,37 @@ jobs:
           echo "should-release: ${{ steps.compare.outputs.should-release }}"
           echo "debug-info: ${{ steps.compare.outputs.debug-info }}"
 
-      # - name: Setup pnpm
-      #   if: steps.compare.outputs.should-release == 'true'
-      #   uses: pnpm/action-setup@v2.2.1
-      #   with:
-      #     version: 7.0.x
-      # - name: build
-      #   if: steps.compare.outputs.should-release == 'true'
-      #   run: |
-      #     pnpm install
-      #     pnpm run base-build
-      #     cd ${{ matrix.package_path }}
-      #     pnpm run build
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
-      # - name: publish package if patch version is changed and never published before
-      #   if: steps.compare.outputs.should-release == 'true'
-      #   run: |
-      #     cd ${{ matrix.package_path }}
-      #     pnpm publish --tag prod-latest --publish-branch production
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup pnpm
+        if: steps.compare.outputs.should-release == 'true'
+        uses: pnpm/action-setup@v2.2.1
+        with:
+          version: 7.0.x
+
+      - name: build
+        if: steps.compare.outputs.should-release == 'true'
+        run: |
+          pnpm install
+          cd ${{ matrix.package_path }}
+          pnpm run build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
+
+      - name: publish package if patch version is changed and never published before
+        if: steps.compare.outputs.should-release == 'true'
+        run: |
+          cd ${{ matrix.package_path }}
+          pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: create tag
+        if: steps.compare.outputs.should-release == 'true'
+        uses: actions/github-script@v4
+        with:
+          script: |
+            github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ steps.remote.outputs.package-name }}-${{ steps.check.outputs.version }}",
+              sha: context.sha
+            })
