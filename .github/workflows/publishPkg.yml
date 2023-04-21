@@ -124,7 +124,7 @@ jobs:
       #   env:
       #     NODE_AUTH_TOKEN: ${{ secrets.PAT_R_PKG }}
 
-      - name: publish package if patch version is changed and never published before
+      - name: publish package if version is changed and never published before
         if: steps.compare.outputs.should-release == 'true'
         run: |
           cd ${{ matrix.package_path }}
