@@ -80,10 +80,10 @@ jobs:
              debugInfo="shouldRelease is $shouldRelease because no new version is detected."
           fi
           
-          if [[ $checkChanged = "true" ]] && [[ $checkType != "patch" ]]; then
-             shouldRelease=false
-             debugInfo="shouldRelease is $shouldRelease because new version is not updated in patch but in $checkType."
-          fi
+          # if [[ $checkChanged = "true" ]] && [[ $checkType != "patch" ]]; then
+          #    shouldRelease=false
+          #    debugInfo="shouldRelease is $shouldRelease because new version is not updated in patch but in $checkType."
+          # fi
           
           isAlreadyPublished=`python3 << END
           print (str('$checkNewVersion' in ${{ steps.remote.outputs.remote-versions }}).lower())
