@@ -1,8 +1,11 @@
 name: Publish pacakge
+
 on:
-  push:
-    branches:
-      - master
+  workflow_call:
+    inputs:
+      package_infos: # should meet strategy.matrix syntax with package_name & package_path
+        required: true
+        type: string # json string
 
 jobs:
   publish-pkg:
